@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Stock Trader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .balance {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .balance h2 {
+            margin: 0;
+            color: #2e7d32;
+            font-size: 24px;
+        }
+        .section {
+            margin: 25px 0;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+        }
+        a {
+            color: #2196F3;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        a:hover {
+            background: #e3f2fd;
+        }
+        .logout {
+            display: inline-block;
+            margin-top: 20px;
+            color: #f44336;
+        }
+        .logout:hover {
+            background: #ffebee;
+        }
+        .coming-soon {
+            color: #999;
+            font-style: italic;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ full_name }}!</h1>
+    
+    <h2>Cash Balance: ${{ "%.2f"|format(balance) }}</h2>
+    
+    <div>
+        <h3>Actions:</h3>
+        <ul>
+            <li><a href="/deposit">Deposit Cash</a></li>
+            <li><a href="/withdraw">Withdraw Cash</a></li>
+            <li><a href="/buy">Buy Stocks</a></li>
+            <li><a href="/sell">Sell Stocks</a></li>
+            <li><a href="/portfolio">View Portfolio</a></li>
+            <li><a href="/history">Transaction History</a></li>
+        </ul>
+    </div>
+    
+    <div>
+        <h3>Your Portfolio</h3>
+        <p>Coming soon...</p>
+    </div>
+    
+    <div>
+        <h3>Recent Transactions</h3>
+        <p>Coming soon...</p>
+    </div>
+    
+    <a href="/logout">Logout</a>
+</body>
+</html>
