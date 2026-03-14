@@ -8,7 +8,7 @@ import ipaddress
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///stock_trader.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:password123@localhost/stock_trading"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = 'your-secret-key-here'
 
@@ -334,13 +334,23 @@ def dashboard():
         return redirect('/login')
     
     user = User.query.get(session['user_id'])
+
+    if user is None:
+        session.clear()
+        flash("Your session is invalid. Please log in again.")
+        return redirect('/login')
+
     account = Account.query.filter_by(UserID=user.UserID).first()
+
+    if account is None:
+        flash("No account found for this user.")
+        return redirect('/login')
     
     # Get recent transactions
     recent_transactions = CashTransaction.query.filter_by(AcctID=account.AcctID)\
         .order_by(CashTransaction.Timestamp.desc()).limit(5).all()
     
-    # Get holdings with stock info
+    # Get holdings w stock info
     holdings = Holding.query.filter_by(UserID=user.UserID).all()
     holdings_data = []
     for holding in holdings:
@@ -354,11 +364,14 @@ def dashboard():
                 'value': holding.Shares * stock.CurrentPrice
             })
     
-    return render_template('dashboard.html', 
-                         user=user, 
-                         account=account,
-                         holdings=holdings_data,
-                         transactions=recent_transactions)
+    return render_template(
+        'dashboard.html',
+        user=user,
+        account=account,
+        holdings=holdings_data,
+        transactions=recent_transactions
+    )
+
 
 @app.route('/deposit', methods=['GET', 'POST'])
 def deposit():
