@@ -4,6 +4,7 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime, date, time
 from sqlalchemy import and_, or_, func
 import ipaddress
+from flask_bootstrap5 import Bootstrap
 
 app = Flask(__name__)
 
@@ -14,6 +15,7 @@ app.config["SECRET_KEY"] = 'your-secret-key-here'
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+bootstrap = Bootstrap(app)
 
 # Models
 class User(db.Model):

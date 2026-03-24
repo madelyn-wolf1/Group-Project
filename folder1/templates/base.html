@@ -29,37 +29,6 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('profile') }}">
-                                <i class="fas fa-user"></i> Profile
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('transactions') }}">
-                                <i class="fas fa-history"></i> Transactions
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('deposit') }}">
-                                <i class="fas fa-plus-circle"></i> Deposit
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('withdraw') }}">
-                                <i class="fas fa-minus-circle"></i> Withdraw
-                            </a>
-                        </li>
-                        {% if session.is_admin %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-crown"></i> Admin
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ url_for('admin_stocks') }}">Manage Stocks</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('market_config') }}">Market Config</a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item">
                             <a class="nav-link text-danger" href="{{ url_for('logout') }}">
                                 <i class="fas fa-sign-out-alt"></i> Logout
                             </a>
