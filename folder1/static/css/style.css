@@ -1,0 +1,73 @@
+/* Custom styles for Stock Trader Simulator */
+/* Bootstrap handles most styling - this is for overrides and specific needs */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Balance display */
+.balance-display {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Stock price positive/negative */
+.price-up {
+    color: #28a745;
+}
+
+.price-down {
+    color: #dc3545;
+}
+
+/* Dashboard stats */
+.stat-card {
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Table styling */
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.1);
+    cursor: pointer;
+}
+
+/* Form styling */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .balance-display {
+        font-size: 1.8rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+}
