@@ -3,95 +3,223 @@
 {% block title %}Dashboard - Stock Trader{% endblock %}
 
 {% block content %}
-<h1>Welcome, {{ user.FirstName }} {{ user.LastName }}!</h1>
-
-<div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-    <h2 style="color: #2e7d32; margin: 0;">Cash Balance</h2>
-    <div class="balance">${{ "%.2f"|format(account.CashBalance) }}</div>
-</div>
-
-<div style="margin: 30px 0;">
-    <h2>Quick Actions</h2>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="/deposit" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Deposit</a>
-        <a href="/withdraw" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Withdraw</a>
-        <a href="/buy" style="background: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Buy Stocks</a>
-        <a href="/sell" style="background: #FF9800; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Sell Stocks</a>
-        <a href="/transactions" style="background: #9C27B0; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Transactions</a>
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">Welcome, {{ user.FirstName }} {{ user.LastName }}!</h1>
+        <p class="lead">Here's your trading dashboard overview.</p>
     </div>
 </div>
 
-<div style="margin: 30px 0;">
-    <h2>Your Portfolio</h2>
-    {% if holdings %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Ticker</th>
-                    <th>Company</th>
-                    <th>Shares</th>
-                    <th>Current Price</th>
-                    <th>Total Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for holding in holdings %}
-                <tr>
-                    <td><strong>{{ holding.ticker }}</strong></td>
-                    <td>{{ holding.company }}</td>
-                    <td>{{ holding.shares }}</td>
-                    <td>${{ "%.2f"|format(holding.current_price) }}</td>
-                    <td>${{ "%.2f"|format(holding.value) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p style="color: #666;">You don't own any stocks yet. <a href="/buy">Start trading!</a></p>
-    {% endif %}
+<!-- Balance Card -->
+<div class="row mb-4">
+    <div class="col-lg-4 col-md-6">
+        <div class="card bg-success text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-2">Cash Balance</h6>
+                        <h2 class="card-text mb-0">${{ "%.2f"|format(account.CashBalance) }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6">
+        <div class="card bg-info text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-2">Portfolio Value</h6>
+                        <h2 class="card-text mb-0">
+                            ${{ "%.2f"|format(holdings|sum(attribute='value')) if holdings else "0.00" }}
+                        </h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-12">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-2">Total Net Worth</h6>
+                        <h2 class="card-text mb-0">
+                            ${{ "%.2f"|format(account.CashBalance + (holdings|sum(attribute='value') if holdings else 0)) }}
+                        </h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-chart-pie fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div style="margin: 30px 0;">
-    <h2>Recent Transactions</h2>
-    {% if transactions %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in transactions %}
-                <tr>
-                    <td>{{ transaction.Timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                        {% if transaction.TransactionType == 'DEPOSIT' %}
-                            <span style="color: #4CAF50;">Deposit</span>
-                        {% elif transaction.TransactionType == 'WITHDRAWAL' %}
-                            <span style="color: #f44336;">Withdrawal</span>
-                        {% else %}
-                            {{ transaction.TransactionType }}
-                        {% endif %}
-                    </td>
-                    <td>${{ "%.2f"|format(transaction.Amount) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <p style="text-align: right;"><a href="/transactions">View all transactions →</a></p>
-    {% else %}
-        <p style="color: #666;">No recent transactions.</p>
-    {% endif %}
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('deposit') }}" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Deposit
+                    </a>
+                    <a href="{{ url_for('withdraw') }}" class="btn btn-danger">
+                        <i class="fas fa-minus-circle"></i> Withdraw
+                    </a>
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Buy Stocks
+                    </a>
+                    <a href="#" class="btn btn-warning">
+                        <i class="fas fa-chart-line"></i> Sell Stocks
+                    </a>
+                    <a href="{{ url_for('transactions') }}" class="btn btn-secondary">
+                        <i class="fas fa-history"></i> View Transactions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Your Portfolio</h5>
+            </div>
+            <div class="card-body">
+                {% if holdings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Company</th>
+                                    <th>Shares</th>
+                                    <th>Current Price</th>
+                                    <th>Total Value</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for holding in holdings %}
+                                <tr>
+                                    <td><strong>{{ holding.ticker }}</strong></td>
+                                    <td>{{ holding.company }}</td>
+                                    <td>{{ holding.shares }}</td>
+                                    <td>${{ "%.2f"|format(holding.current_price) }}</td>
+                                    <td class="text-success">${{ "%.2f"|format(holding.value) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="alert('Coming soon!')">
+                                            Trade
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> You don't own any stocks yet.
+                        <a href="#" class="alert-link">Start trading!</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Transactions</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.Timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if transaction.TransactionType == 'DEPOSIT' %}
+                                            <span class="badge bg-success">Deposit</span>
+                                        {% elif transaction.TransactionType == 'WITHDRAWAL' %}
+                                            <span class="badge bg-danger">Withdrawal</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ transaction.TransactionType }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="{% if transaction.TransactionType == 'DEPOSIT' %}text-success{% else %}text-danger{% endif %}">
+                                        {{ '+' if transaction.TransactionType == 'DEPOSIT' else '-' }}${{ "%.2f"|format(transaction.Amount) }}
+                                    </td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-3">
+                        <a href="{{ url_for('transactions') }}" class="btn btn-link">
+                            View all transactions <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary text-center">
+                        <i class="fas fa-info-circle"></i> No recent transactions.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
 {% if session.is_admin %}
-<div style="margin: 30px 0; padding: 20px; background: #fff3e0; border-radius: 8px;">
-    <h2 style="color: #f57c00;">Admin Controls</h2>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="/admin/stocks" style="background: #f57c00; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Manage Stocks</a>
-        <a href="/admin/market-config" style="background: #f57c00; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Market Settings</a>
+<!-- Admin Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow border-warning">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-crown"></i> Admin Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('admin_stocks') }}" class="btn btn-warning">
+                        <i class="fas fa-chart-line"></i> Manage Stocks
+                    </a>
+                    <a href="{{ url_for('market_config') }}" class="btn btn-warning">
+                        <i class="fas fa-cog"></i> Market Settings
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endif %}

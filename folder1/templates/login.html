@@ -3,23 +3,31 @@
 {% block title %}Login - Stock Trader{% endblock %}
 
 {% block content %}
-<h1>Login to Your Account</h1>
-
-<form method="POST" style="max-width: 400px; margin: 0 auto;">
-    <div>
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required placeholder="Enter your email">
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-sign-in-alt"></i> Login</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <small>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></small>
+            </div>
+        </div>
     </div>
-
-    <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required placeholder="Enter your password">
-    </div>
-
-    <button type="submit" style="width: 100%; margin-top: 10px;">Login</button>
-</form>
-
-<div style="text-align: center; margin-top: 20px;">
-    <p>Don't have an account? <a href="/register" style="color: #2196F3;">Register here</a></p>
 </div>
 {% endblock %}
