@@ -31,24 +31,6 @@ class User(db.Model):
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
     LastLogin = db.Column(db.DateTime)
     
-    # Relationships
-    account = db.relationship('Account', backref='user', uselist=False)
-    orders = db.relationship('Order', backref='user', lazy='dynamic')
-    holdings = db.relationship('Holding', backref='user', lazy='dynamic')
-    audit_logs = db.relationship('AuditLog', backref='user', lazy='dynamic')
-    
-    # Admin managed entities
-    managed_stocks = db.relationship('Stock', backref='admin', lazy='dynamic', 
-                                   foreign_keys='Stock.AdminID')
-    managed_configs = db.relationship('MarketConfig', backref='admin', lazy='dynamic',
-                                    foreign_keys='MarketConfig.AdminID')
-    managed_holidays = db.relationship('MarketHoliday', backref='admin', lazy='dynamic',
-                                     foreign_keys='MarketHoliday.AdminID')
-    
-    @property
-    def full_name(self):
-        return f"{self.FirstName} {self.LastName}"
-    
     def __repr__(self):
         return f'<User {self.Email}>'
 
@@ -60,9 +42,6 @@ class Account(db.Model):
     CashBalance = db.Column(db.Float, default=0.0)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
     UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    cash_transactions = db.relationship('CashTransaction', backref='account', lazy='dynamic')
     
     def __repr__(self):
         return f'<Account {self.AcctID}: ${self.CashBalance}>'
@@ -94,10 +73,6 @@ class Stock(db.Model):
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
     UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    price_history = db.relationship('PriceHistory', backref='stock', lazy='dynamic')
-    orders = db.relationship('Order', backref='stock', lazy='dynamic')
-    holdings = db.relationship('Holding', backref='stock', lazy='dynamic')
     
     def __repr__(self):
         return f'<Stock {self.Ticker}: ${self.CurrentPrice}>'
@@ -130,9 +105,6 @@ class Order(db.Model):
     ExecutedAt = db.Column(db.DateTime)
     RejectedReason = db.Column(db.String(200))
     
-    # Relationships
-    trade = db.relationship('Trade', backref='order', uselist=False)
-    
     def __repr__(self):
         return f'<Order {self.OrderID}: {self.OrderType} {self.Quantity} @ ${self.OrderPrice}>'
 
@@ -146,9 +118,6 @@ class Trade(db.Model):
     ExecutionPrice = db.Column(db.Float, nullable=False)
     Amount = db.Column(db.Float, nullable=False)
     ExecutedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    cash_transaction = db.relationship('CashTransaction', backref='trade', uselist=False)
     
     def __repr__(self):
         return f'<Trade {self.TradeID}: ${self.Amount}>'
