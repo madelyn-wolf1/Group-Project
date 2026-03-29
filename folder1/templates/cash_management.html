@@ -1,35 +1,48 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Cash Management</title>
-</head>
-<body>
-    <h2>Withdraw Cash</h2>
-    <p>Current Balance: ${{ balance }}</p>
+{% extends "base.html" %}
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+{% block title %}Cash Management{% endblock %}
 
-    <form method="POST" action="/withdraw">
-        <label>Amount to Withdraw:</label><br>
-        <input type="number" name="amount" min="0.01" step="0.01" required><br><br>
+{% block content %}
+<h2>Cash Management</h2>
 
-        <label>Confirm withdrawal?</label><br>
-        <select name="confirm">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-        </select><br><br>
+<p><strong>Current Balance:</strong> ${{ "%.2f"|format(balance) }}</p>
 
-        <button type="submit">Withdraw</button>
-    </form>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
 
-    <a href="/dashboard">Back to Dashboard</a>
-</body>
-</html>
+<hr>
+
+<h4>Deposit Cash</h4>
+<form method="POST" action="{{ url_for('deposit') }}">
+    <label>Amount to Deposit:</label><br>
+    <input type="number" name="amount" min="0.01" step="0.01" required><br><br>
+    <button type="submit">Deposit</button>
+</form>
+
+<hr>
+
+<h4>Withdraw Cash</h4>
+<form method="POST" action="{{ url_for('withdraw') }}">
+    <label>Amount to Withdraw:</label><br>
+    <input type="number" name="amount" min="0.01" step="0.01" required><br><br>
+
+    <label>Confirm withdrawal?</label><br>
+    <select name="confirm">
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+    </select><br><br>
+
+    <button type="submit">Withdraw</button>
+</form>
+
+<br>
+<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+
+{% endblock %}

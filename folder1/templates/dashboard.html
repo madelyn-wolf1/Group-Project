@@ -25,7 +25,7 @@
             <div class="card-body">
                 <h6 class="card-title mb-2">Total Net Worth</h6>
                 <h2 class="card-text mb-0">
-                    ${{ "%.2f"|format(account.CashBalance) }}
+                    ${{ "%.2f"|format(net_worth) }}
                 </h2>
             </div>
         </div>
@@ -41,11 +41,17 @@
                     <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
-                    <a href="{{ url_for('login') }}" class="btn btn-success">
-                        <i class="fas fa-sign-in-alt"></i> Login
+                    <a href="{{ url_for('stocks') }}" class="btn btn-dark">
+                        <i class="fas fa-chart-line"></i> Market
                     </a>
-                    <a href="{{ url_for('register') }}" class="btn btn-warning">
-                        <i class="fas fa-user-plus"></i> Register
+                    <a href="{{ url_for('portfolio') }}" class="btn btn-success">
+                        <i class="fas fa-briefcase"></i> Portfolio
+                    </a>
+                    <a href="{{ url_for('transactions') }}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> Transactions
+                    </a>
+                    <a href="{{ url_for('cash_management') }}" class="btn btn-dark">
+                        <i class="fas fa-wallet"></i> Cash Management
                     </a>
                 </div>
             </div>

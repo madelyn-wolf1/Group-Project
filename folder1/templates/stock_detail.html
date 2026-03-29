@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ stock.Ticker }}{% endblock %}
+
+{% block content %}
+<div class="card-body px-4 py-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h3 class="fw-bold mb-0">{{ stock.CompanyName }}</h3>
+            <span class="badge bg-light text-muted border">{{ stock.Ticker }}</span>
+        </div>
+        <span class="badge rounded-pill bg-primary shadow-sm">
+            <i class="bi bi-patch-check-fill"></i> Verified Investor
+        </span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Current Price</small>
+            <span class="fs-5 fw-bold text-success">${{ "%.2f"|format(stock.CurrentPrice) }}</span>
+        </div>
+        <div class="col-6">
+            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Opening</small>
+            <span class="fs-5 text-dark">${{ "%.2f"|format(stock.OpeningPrice) }}</span>
+        </div>
+        <div class="col-6">
+            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Your Holdings</small>
+            <span class="fw-bold">{{ owned_shares }} Shares</span>
+        </div>
+        <div class="col-6">
+            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Available Cash</small>
+            <span class="fw-bold text-primary">${{ "{:,.2f}".format(cash_balance) }}</span>
+        </div>
+    </div>
+
+    <div class="pt-3 border-top">
+        <a href="{{ url_for('trade', ticker=stock.Ticker) }}" class="btn btn-dark px-4 shadow-sm">
+            Trade
+        </a>
+        <a href="{{ url_for('stocks') }}" class="btn btn-link text-decoration-none text-muted">Cancel</a>
+    </div>
+</div>
+{% endblock %}

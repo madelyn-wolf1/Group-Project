@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Trade {{ stock.Ticker }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h2 class="fw-bold mb-1">{{ stock.CompanyName }}</h2>
+            <span class="badge bg-light text-dark border mb-4">{{ stock.Ticker }}</span>
+
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <small class="text-uppercase text-muted d-block">Current Price</small>
+                    <h3 class="text-success fw-bold mb-0">${{ "%.2f"|format(stock.CurrentPrice) }}</h3>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-uppercase text-muted d-block">Available Cash</small>
+                    <h3 class="text-primary fw-bold mb-0">${{ "%.2f"|format(cash_balance) }}</h3>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-uppercase text-muted d-block">Your Holdings</small>
+                    <p class="fw-semibold mb-0">{{ owned_shares }} Shares</p>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-uppercase text-muted d-block">Order Status</small>
+                    <p class="fw-semibold mb-0">
+                        {{ "Executes now" if market_open else "Will be pending" }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="alert alert-{{ 'success' if market_open else 'danger' }} mb-4" role="alert">
+                {{ "Market is open: order executes now" if market_open else "Market is closed: order will be pending" }}
+            </div>
+
+            <hr class="mb-4">
+
+            <form method="POST" action="{{ url_for('trade', ticker=stock.Ticker) }}">
+                <div class="mb-3">
+                    <label class="form-label">Order Type</label>
+                    <select name="order_type" class="form-select" required>
+                        <option value="BUY">Buy</option>
+                        <option value="SELL">Sell</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" name="quantity" min="1" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-dark px-4">Submit Order</button>
+                <a href="{{ url_for('stock_detail', ticker=stock.Ticker) }}" class="btn btn-link text-secondary text-decoration-none">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
