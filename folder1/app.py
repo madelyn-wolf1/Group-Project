@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, session, flash, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime, date, time
@@ -273,9 +273,6 @@ def login():
 
         user = User.query.filter_by(Email=email).first()
         if user and bcrypt.check_password_hash(user.HashPassword, password):
-            if user.Status != 'active':
-                flash("Account is not active")
-                return redirect('/login')
                 
             session['user_id'] = user.UserID
             session['is_admin'] = user.Admin
@@ -284,7 +281,9 @@ def login():
             db.session.commit()
             
             log_audit('USER_LOGIN', user.UserID, 'User logged in')
-            return redirect('/dashboard')
+            if user.Admin:
+                return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('dashboard'))
         
         flash("Invalid credentials")
         return redirect('/login')
@@ -342,6 +341,65 @@ def dashboard():
         holdings=holdings_data,
         transactions=recent_transactions
     )
+
+#Administrator routes
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    total_stocks = Stock.query.count()
+    active_stocks = Stock.query.filter_by(ActiveStatus=True).count()
+    holiday_count = MarketHoliday.query.count()
+    recent_stocks = Stock.query.order_by(Stock.CreatedAt.desc()).limit(5).all()
+    recent_logs = AuditLog.query.order_by(AuditLog.EventTime.desc()).limit(5).all()
+
+    market_config = MarketConfig.query.first()
+    market_open = False
+
+    return render_template(
+        'admin/admin_dashboard.html',
+        total_stocks=total_stocks,
+        active_stocks=active_stocks,
+        holiday_count=holiday_count,
+        recent_stocks=recent_stocks,
+        recent_logs=recent_logs,
+        market_open=market_open
+    )
+
+@app.route('/admin/stocks')
+def admin_stocks():
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    stocks = Stock.query.all()
+    return render_template('admin/admin_stocks.html', stocks=stocks)
+
+
+@app.route('/admin/stocks/add', methods=['POST'])
+def add_stock():
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    stock = Stock(
+        CompanyName=request.form['company_name'],
+        Ticker=request.form['ticker'].upper(),
+        TotalVolume=int(request.form['total_volume']),
+        OpeningPrice=float(request.form['opening_price']),
+        CurrentPrice=float(request.form['opening_price']),
+        ActiveStatus=True,
+        AdminID=session['user_id']
+    )
+
+    db.session.add(stock)
+    db.session.commit()
+    flash('Stock added successfully.', 'success')
+    return redirect(url_for('admin_stocks'))
+
 
 
 

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Manage Stocks{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="fas fa-coins me-2"></i>Manage Stocks</h2>
+        <p class="text-muted mb-0">Add, edit, or delete stocks.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add Stock Form -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Stock</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_stock') }}">
+                    <div class="mb-3">
+                        <label for="company_name" class="form-label">Company Name</label>
+                        <input type="text" class="form-control" id="company_name" name="company_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ticker" class="form-label">Ticker Symbol</label>
+                        <input type="text" class="form-control text-uppercase" id="ticker" name="ticker" maxlength="10" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="total_volume" class="form-label">Total Volume</label>
+                        <input type="number" class="form-control" id="total_volume" name="total_volume" min="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="opening_price" class="form-label">Opening Price</label>
+                        <input type="number" step="0.01" class="form-control" id="opening_price" name="opening_price" min="0.01" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>Add Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock List -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Current Stocks</h5>
+                <span class="badge bg-light text-dark">{{ stocks|length }} Total</span>
+            </div>
+            <div class="card-body p-0">
+                {% if stocks %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Company</th>
+                                <th>Ticker</th>
+                                <th>Volume</th>
+                                <th>Current Price</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in stocks %}
+                            <tr>
+                                <td>{{ stock.StockID }}</td>
+                                <td>{{ stock.CompanyName }}</td>
+                                <td><span class="badge bg-dark">{{ stock.Ticker }}</span></td>
+                                <td>{{ stock.TotalVolume }}</td>
+                                <td>${{ "%.2f"|format(stock.CurrentPrice) }}</td>
+                                <td>
+                                    {% if stock.ActiveStatus %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ url_for('edit_stock', stock_id=stock.StockID) }}" class="btn btn-sm btn-warning me-1">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <form method="POST" action="{{ url_for('delete_stock', stock_id=stock.StockID) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                onclick="return confirm('Are you sure you want to delete this stock?');">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-box-open fa-2x mb-3"></i>
+                    <p class="mb-0">No stocks have been added yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
