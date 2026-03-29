@@ -73,7 +73,6 @@ class Stock(db.Model):
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
     UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    
     def __repr__(self):
         return f'<Stock {self.Ticker}: ${self.CurrentPrice}>'
 
@@ -216,6 +215,22 @@ def log_audit(event_type, user_id=None, details=None):
     db.session.add(audit)
     db.session.commit()
 
+#Seed Stock
+@app.before_request
+def seed_stock():
+    if not Stock.query.first():
+        test_stock = Stock(
+            Tiker='TSLA',
+            CompanyName='Tesla Inc.',
+            CurrentPrice=150.00,
+            OpeningPrice=145.00,
+            TotalVolume=1000000,
+            ActiveStatus=True,
+        )
+        db.session.add(test_stock)
+        db.session.commit()
+        
+
 # Routes
 @app.route('/')
 def index():
@@ -273,7 +288,6 @@ def login():
 
         user = User.query.filter_by(Email=email).first()
         if user and bcrypt.check_password_hash(user.HashPassword, password):
-                
             session['user_id'] = user.UserID
             session['is_admin'] = user.Admin
             
@@ -323,6 +337,7 @@ def dashboard():
     # Get holdings w stock info
     holdings = Holding.query.filter_by(UserID=user.UserID).all()
     holdings_data = []
+
     for holding in holdings:
         stock = Stock.query.get(holding.StockID)
         if stock and holding.Shares > 0:
@@ -333,17 +348,348 @@ def dashboard():
                 'current_price': stock.CurrentPrice,
                 'value': holding.Shares * stock.CurrentPrice
             })
+
     
+    total_stock_value = sum(h['value'] for h in holdings_data)
+    net_worth = account.CashBalance + total_stock_value
+
     return render_template(
         'dashboard.html',
         user=user,
         account=account,
         holdings=holdings_data,
-        transactions=recent_transactions
+        transactions=recent_transactions,
+        net_worth=net_worth
     )
 
-#Administrator routes
+@app.route('/cash-management')
+def cash_management():
+    if 'user_id' not in session:
+        return redirect('/login')
 
+    account = Account.query.filter_by(UserID=session['user_id']).first()
+
+    if not account:
+        flash("Account not found")
+        return redirect('/dashboard')
+
+    return render_template('cash_management.html', balance=account.CashBalance)
+
+@app.route('/deposit', methods=['POST'])
+def deposit():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    account = Account.query.filter_by(UserID=session['user_id']).first()
+
+    if not account:
+        flash("Account not found")
+        return redirect('/dashboard')
+
+    try:
+        amount = float(request.form.get('amount', 0))
+    except:
+        flash("Invalid amount")
+        return redirect('/cash-management')
+
+    if amount <= 0:
+        flash("Amount must be greater than 0")
+        return redirect('/cash-management')
+
+    account.CashBalance += amount
+
+    db.session.add(CashTransaction(
+        AcctID=account.AcctID,
+        TransactionType='DEPOSIT',
+        Amount=amount
+    ))
+
+    db.session.commit()
+
+    flash("Deposit successful")
+    return redirect('/cash-management')
+
+@app.route('/withdraw', methods=['POST'])
+def withdraw():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    account = Account.query.filter_by(UserID=session['user_id']).first()
+
+    if not account:
+        flash("Account not found")
+        return redirect('/dashboard')
+
+    try:
+        amount = float(request.form.get('amount', 0))
+    except:
+        flash("Invalid amount")
+        return redirect('/cash-management')
+
+    confirm = request.form.get('confirm')
+
+    if confirm != 'yes':
+        flash("Withdrawal cancelled")
+        return redirect('/cash-management')
+
+    if amount <= 0:
+        flash("Amount must be greater than 0")
+        return redirect('/cash-management')
+
+    if account.CashBalance < amount:
+        flash("Not enough balance")
+        return redirect('/cash-management')
+
+    account.CashBalance -= amount
+
+    db.session.add(CashTransaction(
+        AcctID=account.AcctID,
+        TransactionType='WITHDRAWAL',
+        Amount=amount
+    ))
+
+    db.session.commit()
+
+    flash("Withdrawal successful")
+    return redirect('/cash-management')
+
+@app.route('/transactions')
+def transactions():
+    return "Transactions coming soon"
+
+@app.route('/portfolio')
+def portfolio():
+    return "Portfolio coming soon"
+
+@app.route('/stocks')
+def stocks():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    q = (request.args.get('q') or '').strip()
+
+    query = Stock.query.filter_by(ActiveStatus=True)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Stock.Ticker.ilike(like),
+                Stock.CompanyName.ilike(like)
+            )
+        )
+
+    stocks_list = query.order_by(Stock.Ticker.asc()).all()
+
+    market_open = True
+
+    return render_template(
+        'stock_search.html',
+        stocks=stocks_list,
+        market_open=market_open
+    )
+
+
+@app.route('/stocks/<string:ticker>')
+def stock_detail(ticker):
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    stock = Stock.query.filter_by(
+        Ticker=ticker.upper(),
+        ActiveStatus=True
+    ).first_or_404()
+
+    account = Account.query.filter_by(UserID=session['user_id']).first()
+    holding = Holding.query.filter_by(
+        UserID=session['user_id'],
+        StockID=stock.StockID
+    ).first()
+
+    cash_balance = account.CashBalance if account else 0.0
+    owned_shares = holding.Shares if holding else 0
+
+    return render_template(
+        'stock_detail.html',
+        stock=stock,
+        owned_shares=owned_shares,
+        cash_balance=cash_balance
+    )
+
+
+@app.route('/trade/<string:ticker>', methods=['GET', 'POST'])
+def trade(ticker):
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    stock = Stock.query.filter_by(
+        Ticker=ticker.upper(),
+        ActiveStatus=True
+    ).first_or_404()
+
+    account = Account.query.filter_by(UserID=session['user_id']).first()
+    if not account:
+        flash("Account not found")
+        return redirect('/dashboard')
+
+    holding = Holding.query.filter_by(
+        UserID=session['user_id'],
+        StockID=stock.StockID
+    ).first()
+
+    owned_shares = holding.Shares if holding else 0
+    cash_balance = account.CashBalance
+    market_open = True
+
+    if request.method == 'POST':
+        order_type = (request.form.get('order_type') or '').strip().upper()
+
+        try:
+            quantity = int(request.form.get('quantity', 0))
+        except ValueError:
+            quantity = 0
+
+        if order_type not in ['BUY', 'SELL']:
+            flash("Invalid order type")
+            return redirect(url_for('trade', ticker=stock.Ticker))
+
+        if quantity <= 0:
+            flash("Quantity must be at least 1")
+            return redirect(url_for('trade', ticker=stock.Ticker))
+
+        order_price = stock.CurrentPrice
+        total_amount = quantity * order_price
+
+        if market_open:
+            if order_type == 'BUY':
+                if account.CashBalance < total_amount:
+                    flash("Not enough cash")
+                    return redirect(url_for('trade', ticker=stock.Ticker))
+
+                account.CashBalance -= total_amount
+
+                if not holding:
+                    holding = Holding(
+                        UserID=session['user_id'],
+                        StockID=stock.StockID,
+                        Shares=0
+                    )
+                    db.session.add(holding)
+
+                holding.Shares += quantity
+
+                order = Order(
+                    UserID=session['user_id'],
+                    StockID=stock.StockID,
+                    OrderType='BUY',
+                    Quantity=quantity,
+                    OrderPrice=order_price,
+                    Status='executed',
+                    PlacedAt=datetime.utcnow(),
+                    ExecutedAt=datetime.utcnow()
+                )
+                db.session.add(order)
+                db.session.flush()
+
+                trade_row = Trade(
+                    OrderID=order.OrderID,
+                    TradeType='BUY',
+                    Quantity=quantity,
+                    ExecutionPrice=order_price,
+                    Amount=total_amount,
+                    ExecutedAt=datetime.utcnow()
+                )
+                db.session.add(trade_row)
+                db.session.flush()
+
+                db.session.add(CashTransaction(
+                    AcctID=account.AcctID,
+                    TradeID=trade_row.TradeID,
+                    TransactionType='TRADE_BUY',
+                    Amount=total_amount
+                ))
+
+                db.session.commit()
+                flash("Buy order executed successfully")
+                return redirect(url_for('stock_detail', ticker=stock.Ticker))
+
+            else:
+                if owned_shares < quantity:
+                    flash("Not enough shares")
+                    return redirect(url_for('trade', ticker=stock.Ticker))
+
+                account.CashBalance += total_amount
+                holding.Shares -= quantity
+
+                order = Order(
+                    UserID=session['user_id'],
+                    StockID=stock.StockID,
+                    OrderType='SELL',
+                    Quantity=quantity,
+                    OrderPrice=order_price,
+                    Status='executed',
+                    PlacedAt=datetime.utcnow(),
+                    ExecutedAt=datetime.utcnow()
+                )
+                db.session.add(order)
+                db.session.flush()
+
+                trade_row = Trade(
+                    OrderID=order.OrderID,
+                    TradeType='SELL',
+                    Quantity=quantity,
+                    ExecutionPrice=order_price,
+                    Amount=total_amount,
+                    ExecutedAt=datetime.utcnow()
+                )
+                db.session.add(trade_row)
+                db.session.flush()
+
+                db.session.add(CashTransaction(
+                    AcctID=account.AcctID,
+                    TradeID=trade_row.TradeID,
+                    TransactionType='TRADE_SELL',
+                    Amount=total_amount
+                ))
+
+                db.session.commit()
+                flash("Sell order executed successfully")
+                return redirect(url_for('stock_detail', ticker=stock.Ticker))
+
+        else:
+            if order_type == 'BUY' and account.CashBalance < total_amount:
+                flash("Not enough cash to place this future buy order")
+                return redirect(url_for('trade', ticker=stock.Ticker))
+
+            if order_type == 'SELL' and owned_shares < quantity:
+                flash("Not enough shares to place this future sell order")
+                return redirect(url_for('trade', ticker=stock.Ticker))
+
+            order = Order(
+                UserID=session['user_id'],
+                StockID=stock.StockID,
+                OrderType=order_type,
+                Quantity=quantity,
+                OrderPrice=order_price,
+                Status='pending',
+                PlacedAt=datetime.utcnow(),
+                EligibleAt=datetime.utcnow()
+            )
+            db.session.add(order)
+            db.session.commit()
+
+            flash("Market is closed. Order placed as pending.")
+            return redirect(url_for('stock_detail', ticker=stock.Ticker))
+
+    return render_template(
+        'sell.html',
+        stock=stock,
+        cash_balance=cash_balance,
+        owned_shares=owned_shares,
+        market_open=market_open
+    )
+
+# Administrator routes
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if not session.get('user_id') or not session.get('is_admin'):
@@ -357,7 +703,7 @@ def admin_dashboard():
     recent_logs = AuditLog.query.order_by(AuditLog.EventTime.desc()).limit(5).all()
 
     market_config = MarketConfig.query.first()
-    market_open = False
+    market_open = True
 
     return render_template(
         'admin/admin_dashboard.html',
@@ -377,7 +723,6 @@ def admin_stocks():
 
     stocks = Stock.query.all()
     return render_template('admin/admin_stocks.html', stocks=stocks)
-
 
 @app.route('/admin/stocks/add', methods=['POST'])
 def add_stock():
@@ -399,12 +744,6 @@ def add_stock():
     db.session.commit()
     flash('Stock added successfully.', 'success')
     return redirect(url_for('admin_stocks'))
-
-
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
