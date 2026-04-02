@@ -745,5 +745,40 @@ def add_stock():
     flash('Stock added successfully.', 'success')
     return redirect(url_for('admin_stocks'))
 
+@app.route('/admin/stocks/edit/<int:stock_id>', methods=['GET', 'POST'])
+def edit_stock(stock_id):
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    stock = Stock.query.get_or_404(stock_id)
+
+    if request.method == 'POST':
+        stock.CompanyName = request.form['company_name']
+        stock.Ticker = request.form['ticker'].upper()
+        stock.TotalVolume = int(request.form['total_volume'])
+        stock.CurrentPrice = float(request.form['current_price'])
+        stock.ActiveStatus = bool(int(request.form['active_status']))
+
+        db.session.commit()
+        flash('Stock updated successfully.', 'success')
+        return redirect(url_for('admin_stocks'))
+
+    return render_template('admin/edit_stock.html', stock=stock)
+
+@app.route('/admin/stocks/delete/<int:stock_id>', methods=['POST'])
+def delete_stock(stock_id):
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    stock = Stock.query.get_or_404(stock_id)
+    db.session.delete(stock)
+    db.session.commit()
+
+    flash('Stock deleted successfully.', 'success')
+    return redirect(url_for('admin_stocks'))
+
+
 if __name__ == '__main__':
     app.run(debug=True)
