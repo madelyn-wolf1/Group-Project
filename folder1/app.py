@@ -220,7 +220,7 @@ def log_audit(event_type, user_id=None, details=None):
 def seed_stock():
     if not Stock.query.first():
         test_stock = Stock(
-            Tiker='TSLA',
+            Ticker='TSLA',
             CompanyName='Tesla Inc.',
             CurrentPrice=150.00,
             OpeningPrice=145.00,
