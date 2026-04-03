@@ -41,6 +41,7 @@
             <th>Shares</th>
             <th>Price</th>
             <th>Value</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -51,6 +52,10 @@
             <td>{{ h.shares }}</td>
             <td>${{ "%.2f"|format(h.current_price) }}</td>
             <td>${{ "%.2f"|format(h.value) }}</td>
+            <td>
+                <a href="{{ url_for('stock_detail', ticker=h.ticker) }}" class="btn btn-sm btn-primary">View</a>
+                <a href="{{ url_for('trade', ticker=h.ticker) }}" class="btn btn-sm btn-danger">Sell</a>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
