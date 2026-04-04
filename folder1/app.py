@@ -9,7 +9,7 @@ from flask_bootstrap5 import Bootstrap
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Password@localhost/stock_trading"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:password123@localhost/stock_trading"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = 'your-secret-key-here'
 
