@@ -9,7 +9,7 @@ from flask_bootstrap5 import Bootstrap
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:password123@localhost/stock_trading"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Password@localhost/stock_trading"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = 'your-secret-key-here'
 
@@ -459,7 +459,54 @@ def transactions():
 
 @app.route('/portfolio')
 def portfolio():
-    return "Portfolio coming soon"
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user = User.query.get(session['user_id'])
+
+    if user is None:
+        session.clear()
+        flash("Your session is invalid. Please log in again.")
+        return redirect('/login')
+
+    account = Account.query.filter_by(UserID=user.UserID).first()
+
+    if account is None:
+        flash("Account not found.")
+        return redirect('/dashboard')
+
+    holdings = Holding.query.filter_by(UserID=user.UserID).all()
+    holdings_data = []
+
+    for holding in holdings:
+        if holding.Shares <= 0:
+            continue
+
+        stock = Stock.query.get(holding.StockID)
+        if stock is None:
+            continue
+
+        current_value = holding.Shares * stock.CurrentPrice
+
+        holdings_data.append({
+            'ticker': stock.Ticker,
+            'company': stock.CompanyName,
+            'shares': holding.Shares,
+            'current_price': stock.CurrentPrice,
+            'value': current_value
+        })
+
+    total_stock_value = sum(item['value'] for item in holdings_data)
+    net_worth = account.CashBalance + total_stock_value
+
+    return render_template(
+        'portfolio.html',
+        user=user,
+        account=account,
+        holdings=holdings_data,
+        total_stock_value=total_stock_value,
+        net_worth=net_worth
+    )
 
 @app.route('/stocks')
 def stocks():
