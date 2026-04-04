@@ -455,7 +455,88 @@ def withdraw():
 
 @app.route('/transactions')
 def transactions():
-    return "Transactions coming soon"
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user = User.query.get(session['user_id'])
+    account = Account.query.filter_by(UserID=user.UserID).first()
+
+    tx_type = request.args.get('type', '').upper().strip()
+    ticker = request.args.get('ticker', '').upper().strip()
+
+    rows = []
+
+    # Pending orders
+    pending_orders = Order.query.filter_by(UserID=user.UserID, Status='pending').all()
+    for o in pending_orders:
+        stock = Stock.query.get(o.StockID)
+
+        if tx_type in ['BUY', 'SELL'] and o.OrderType != tx_type:
+            continue
+        if ticker and stock and ticker not in stock.Ticker.upper():
+            continue
+
+        rows.append({
+            'date': o.PlacedAt,
+            'kind': 'Pending',
+            'type': o.OrderType,
+            'ticker': stock.Ticker if stock else '-',
+            'quantity': o.Quantity,
+            'price': o.OrderPrice,
+            'total': o.Quantity * o.OrderPrice,
+            'status': o.Status
+        })
+
+    # Executed trades
+    executed_orders = Order.query.filter_by(UserID=user.UserID, Status='executed').all()
+    for o in executed_orders:
+        stock = Stock.query.get(o.StockID)
+
+        if tx_type in ['BUY', 'SELL'] and o.OrderType != tx_type:
+            continue
+        if ticker and stock and ticker not in stock.Ticker.upper():
+            continue
+
+        rows.append({
+            'date': o.ExecutedAt,
+            'kind': 'Trade',
+            'type': o.OrderType,
+            'ticker': stock.Ticker if stock else '-',
+            'quantity': o.Quantity,
+            'price': o.OrderPrice,
+            'total': o.Quantity * o.OrderPrice,
+            'status': o.Status
+        })
+
+    # Cash transactions
+    cash = CashTransaction.query.filter_by(AcctID=account.AcctID).all()
+    for c in cash:
+        if c.TransactionType in ['TRADE_BUY', 'TRADE_SELL']:
+            continue
+        if tx_type in ['DEPOSIT', 'WITHDRAWAL'] and c.TransactionType != tx_type:
+            continue
+        if tx_type in ['BUY', 'SELL'] and c.TransactionType in ['DEPOSIT', 'WITHDRAWAL']:
+            continue
+
+        rows.append({
+            'date': c.Timestamp,
+            'kind': 'Cash',
+            'type': c.TransactionType,
+            'ticker': '-',
+            'quantity': '-',
+            'price': '-',
+            'total': c.Amount,
+            'status': 'done'
+        })
+
+    rows.sort(key=lambda x: x['date'], reverse=True)
+
+    return render_template(
+        'transactions.html',
+        transactions=rows,
+        tx_type=tx_type,
+        ticker=ticker
+    )
 
 @app.route('/portfolio')
 def portfolio():
