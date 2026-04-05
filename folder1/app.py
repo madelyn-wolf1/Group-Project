@@ -216,6 +216,25 @@ def log_audit(event_type, user_id=None, details=None):
     db.session.add(audit)
     db.session.commit()
 
+#Helper function to check if market is open
+def is_market_open():
+    market_config = MarketConfig.query.first()
+
+    if not market_config:
+        return False
+
+    now = datetime.now()
+
+    if market_config.WeekdaysOnly and now.weekday() >= 5:
+        return False
+
+    current_time = now.time()
+
+    if current_time < market_config.OpenTime or current_time > market_config.CloseTime:
+        return False
+
+    return True
+
 #Seed Stock
 @app.before_request
 def seed_stock():
@@ -643,7 +662,7 @@ def stocks():
 
     stocks_list = query.order_by(Stock.Ticker.asc()).all()
 
-    market_open = True
+    market_open = is_market_open()
 
     return render_template(
         'stock_search.html',
@@ -701,7 +720,7 @@ def trade(ticker):
 
     owned_shares = holding.Shares if holding else 0
     cash_balance = account.CashBalance
-    market_open = True
+    market_open = is_market_open()
 
     if request.method == 'POST':
         order_type = (request.form.get('order_type') or '').strip().upper()
@@ -865,7 +884,7 @@ def admin_dashboard():
     recent_logs = AuditLog.query.order_by(AuditLog.EventTime.desc()).limit(5).all()
 
     market_config = MarketConfig.query.first()
-    market_open = True
+    market_open = is_market_open()
 
     return render_template(
         'admin/admin_dashboard.html',
