@@ -960,6 +960,57 @@ def delete_stock(stock_id):
     flash('Stock deleted successfully.', 'success')
     return redirect(url_for('admin_stocks'))
 
+@app.route('/admin/market-config', methods=['GET', 'POST'])
+def admin_market_config():
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    market_config = MarketConfig.query.first()
+
+    if request.method == 'POST':
+        open_time_str = request.form.get('open_time')
+        close_time_str = request.form.get('close_time')
+        timezone_str = request.form.get('timezone')
+        weekdays_only = True if request.form.get('weekdays_only') == '1' else False
+
+        if not open_time_str or not close_time_str or not timezone_str:
+            flash('All fields are required.', 'danger')
+            return redirect(url_for('admin_market_config'))
+
+        try:
+            open_time_obj = datetime.strptime(open_time_str, '%H:%M').time()
+            close_time_obj = datetime.strptime(close_time_str, '%H:%M').time()
+        except ValueError:
+            flash('Invalid time format.', 'danger')
+            return redirect(url_for('admin_market_config'))
+
+        if open_time_obj >= close_time_obj:
+            flash('Open time must be earlier than close time.', 'danger')
+            return redirect(url_for('admin_market_config'))
+
+        if market_config:
+            market_config.OpenTime = open_time_obj
+            market_config.CloseTime = close_time_obj
+            market_config.TimeZone = timezone_str
+            market_config.WeekdaysOnly = weekdays_only
+            market_config.AdminID = session['user_id']
+        else:
+            market_config = MarketConfig(
+                AdminID=session['user_id'],
+                OpenTime=open_time_obj,
+                CloseTime=close_time_obj,
+                TimeZone=timezone_str,
+                WeekdaysOnly=weekdays_only
+            )
+            db.session.add(market_config)
+
+        db.session.commit()
+        flash('Market configuration updated successfully.', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('admin/market_config.html', market_config=market_config)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
