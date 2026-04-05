@@ -40,4 +40,19 @@
         <a href="{{ url_for('stocks') }}" class="btn btn-link text-decoration-none text-muted">Cancel</a>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setInterval(function() {
+        fetch("{{ url_for('random_price_generator') }}", { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' && data.prices['{{ stock.Ticker }}']) {
+                    let priceEl = document.getElementById('price');
+                    if (priceEl) priceEl.innerText = data.prices['{{ stock.Ticker }}'].toFixed(2);
+                }
+            });
+    }, 60000);
+});
+</script>
 {% endblock %}
