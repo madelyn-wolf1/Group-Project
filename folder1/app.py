@@ -4,12 +4,13 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime, date, time
 from sqlalchemy import and_, or_, func
 import ipaddress
+import random
 from flask_bootstrap5 import Bootstrap
 
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:password123@localhost/stock_trading"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Password@localhost/stock_trading"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = 'your-secret-key-here'
 
@@ -230,6 +231,33 @@ def seed_stock():
         db.session.add(test_stock)
         db.session.commit()
         
+# Global price updateer
+last_update_time = datetime.min
+
+@app.before_request
+def background_price_generator():
+    global last_update_time
+    
+    if request.path.startswith('/static'):
+        return
+        
+    now = datetime.utcnow()
+    
+    if (now - last_update_time).total_seconds() >= 59:
+        all_stocks = Stock.query.all()
+        for s in all_stocks:
+            change_pct = random.uniform(-0.02, 0.02)
+            s.CurrentPrice = round(s.CurrentPrice * (1 + change_pct), 2)
+            
+            if s.CurrentPrice < 1:
+                s.CurrentPrice = 10.00
+            
+            # Record this new price in the history table
+            history_record = PriceHistory(StockID=s.StockID, Price=s.CurrentPrice)
+            db.session.add(history_record)
+            
+        db.session.commit()
+        last_update_time = now
 
 # Routes
 @app.route('/')
@@ -588,6 +616,12 @@ def portfolio():
         total_stock_value=total_stock_value,
         net_worth=net_worth
     )
+
+@app.route('/random-price-generator', methods=['GET', 'POST'])
+def random_price_generator():
+    all_stocks = Stock.query.all()
+    prices = {s.Ticker: s.CurrentPrice for s in all_stocks}
+    return jsonify({'status': 'success', 'prices': prices})
 
 @app.route('/stocks')
 def stocks():
