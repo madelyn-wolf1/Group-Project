@@ -10,7 +10,7 @@ from flask_bootstrap5 import Bootstrap
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Password@localhost/stock_trading"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:password123@localhost/stock_trading"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = 'your-secret-key-here'
 
@@ -252,7 +252,7 @@ def background_price_generator():
             if s.CurrentPrice < 1:
                 s.CurrentPrice = 10.00
             
-            # Record this new price in the history table
+            # To Record the changes in price history 
             history_record = PriceHistory(StockID=s.StockID, Price=s.CurrentPrice)
             db.session.add(history_record)
             
