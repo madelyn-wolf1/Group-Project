@@ -513,12 +513,19 @@ def transactions():
 
     rows = []
 
+    show_all = tx_type == ''
+    show_stock = tx_type in ['BUY', 'SELL']
+    show_cash = tx_type in ['DEPOSIT', 'WITHDRAWAL']
+    show_pending = tx_type == 'PENDING'
+
     # Pending orders
     pending_orders = Order.query.filter_by(UserID=user.UserID, Status='Pending').all()
     for o in pending_orders:
         stock = Stock.query.get(o.StockID)
 
-        if tx_type in ['BUY', 'SELL'] and o.OrderType != tx_type:
+        if show_cash:
+            continue
+        if show_stock and o.OrderType != tx_type:
             continue
         if ticker and stock and ticker not in stock.Ticker.upper():
             continue
@@ -533,7 +540,7 @@ def transactions():
             'price': o.OrderPrice,
             'total': o.Quantity * o.OrderPrice,
             'status': o.Status,
-            'can_cancel': o.Status == 'Pending'
+            'can_cancel': True
         })
 
     # Executed trades
@@ -541,7 +548,9 @@ def transactions():
     for o in executed_orders:
         stock = Stock.query.get(o.StockID)
 
-        if tx_type in ['BUY', 'SELL'] and o.OrderType != tx_type:
+        if show_pending or show_cash:
+            continue
+        if show_stock and o.OrderType != tx_type:
             continue
         if ticker and stock and ticker not in stock.Ticker.upper():
             continue
@@ -564,9 +573,9 @@ def transactions():
     for c in cash:
         if c.TransactionType in ['TRADE_BUY', 'TRADE_SELL']:
             continue
-        if tx_type in ['DEPOSIT', 'WITHDRAWAL'] and c.TransactionType != tx_type:
+        if show_pending or show_stock:
             continue
-        if tx_type in ['BUY', 'SELL'] and c.TransactionType in ['DEPOSIT', 'WITHDRAWAL']:
+        if show_cash and c.TransactionType != tx_type:
             continue
 
         rows.append({
