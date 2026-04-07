@@ -9,8 +9,9 @@
         <p class="lead">Here's your trading dashboard overview.</p>
     </div>
 </div>
-    <!-- Balance Cards -->
-    <div class="row mb-4">
+
+<!-- Balance Cards -->
+<div class="row mb-4">
     <div class="col-lg-6 col-md-12">
         <div class="card bg-success text-white shadow">
             <div class="card-body">
@@ -29,32 +30,26 @@
             </div>
         </div>
     </div>
+</div>
 
-<!-- Quick Actions -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-body">
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                    <a href="{{ url_for('stocks') }}" class="btn btn-dark">
-                        <i class="fas fa-chart-line"></i> Market
-                    </a>
-                    <a href="{{ url_for('portfolio') }}" class="btn btn-success">
-                        <i class="fas fa-briefcase"></i> Portfolio
-                    </a>
-                    <a href="{{ url_for('transactions') }}" class="btn btn-secondary">
-                        <i class="fas fa-list"></i> Transactions
-                    </a>
-                    <a href="{{ url_for('cash_management') }}" class="btn btn-dark">
-                        <i class="fas fa-wallet"></i> Cash Management
-                    </a>
-                </div>
-            </div>
-        </div>
+<!-- Portfolio Section -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Portfolio</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-0">Your portfolio is empty. <a href="{{ url_for('stocks') }}">Go to Market</a></p>
     </div>
 </div>
-    
+
+<!-- Transactions Section -->
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Transactions</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-0">No transactions yet. Your trading history will appear here.</p>
+    </div>
+</div>
+
 {% endblock %}
