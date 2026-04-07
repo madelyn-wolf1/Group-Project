@@ -20,7 +20,8 @@
                             <h6 class="text-muted mb-2">Total Stocks</h6>
                             <h3 class="fw-bold mb-0">{{ total_stocks }}</h3>
                         </div>
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                            style="width:60px; height:60px;">
                             <i class="fas fa-coins fa-lg"></i>
                         </div>
                     </div>
@@ -38,17 +39,24 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Active Stocks</h6>
-                            <h3 class="fw-bold mb-0">{{ active_stocks }}</h3>
+                            <h6 class="text-muted mb-2">Market Settings</h6>
+                            <h3 class="fw-bold mb-0">
+                                {% if market_config %}
+                                Configured
+                                {% else %}
+                                Not Set
+                                {% endif %}
+                            </h3>
                         </div>
-                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
-                            <i class="fas fa-chart-line fa-lg"></i>
+                        <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center"
+                            style="width:60px; height:60px;">
+                            <i class="fas fa-clock fa-lg"></i>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer bg-white border-0 pt-0">
-                    <a href="{{ url_for('admin_stocks') }}" class="btn btn-outline-success btn-sm w-100">
-                        View Active Listings
+                    <a href="{{ url_for('admin_market_config') }}" class="btn btn-outline-warning btn-sm w-100">
+                        Manage Market Settings
                     </a>
                 </div>
             </div>
@@ -62,7 +70,8 @@
                             <h6 class="text-muted mb-2">Market Holidays</h6>
                             <h3 class="fw-bold mb-0">{{ holiday_count }}</h3>
                         </div>
-                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
+                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center"
+                            style="width:60px; height:60px;">
                             <i class="fas fa-calendar-alt fa-lg"></i>
                         </div>
                     </div>
@@ -76,33 +85,7 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6 col-lg-4">
-                    <a href="{{ url_for('admin_stocks') }}" class="btn btn-primary w-100 py-3">
-                        <i class="fas fa-coins d-block mb-2 fa-lg"></i>
-                        Manage Stocks
-                    </a>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <a href="{{ url_for('admin_market_config') }}" class="btn btn-warning w-100 py-3">
-                        <i class="fas fa-clock d-block mb-2 fa-lg"></i>
-                        Market Settings
-                    </a>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <button class="btn btn-secondary w-100 py-3" disabled>
-                        <i class="fas fa-file-alt d-block mb-2 fa-lg"></i>
-                        Audit Logs
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     {% if market_config %}
     <div class="card border-0 shadow-sm mb-4">
@@ -134,9 +117,9 @@
                         <h6 class="text-muted mb-1">Trading Days</h6>
                         <div class="fw-bold">
                             {% if market_config.WeekdaysOnly %}
-                                Weekdays Only
+                            Weekdays Only
                             {% else %}
-                                All Days
+                            All Days
                             {% endif %}
                         </div>
                     </div>
@@ -173,9 +156,9 @@
                                     <td>${{ "%.2f"|format(stock.CurrentPrice) }}</td>
                                     <td>
                                         {% if stock.ActiveStatus %}
-                                            <span class="badge bg-success">Active</span>
+                                        <span class="badge bg-success">Active</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Inactive</span>
+                                        <span class="badge bg-secondary">Inactive</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -199,24 +182,24 @@
                 </div>
                 <div class="card-body">
                     {% if recent_logs %}
-                        <div class="list-group list-group-flush">
-                            {% for log in recent_logs %}
-                            <div class="list-group-item px-0">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1">{{ log.EventType }}</h6>
-                                        <p class="mb-1 text-muted small">{{ log.Details }}</p>
-                                        <small class="text-muted">
-                                            User ID: {{ log.UserID if log.UserID else 'System' }}
-                                        </small>
-                                    </div>
-                                    <small class="text-muted">{{ log.EventTime }}</small>
+                    <div class="list-group list-group-flush">
+                        {% for log in recent_logs %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ log.EventType }}</h6>
+                                    <p class="mb-1 text-muted small">{{ log.Details }}</p>
+                                    <small class="text-muted">
+                                        User ID: {{ log.UserID if log.UserID else 'System' }}
+                                    </small>
                                 </div>
+                                <small class="text-muted">{{ log.EventTime }}</small>
                             </div>
-                            {% endfor %}
                         </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                        <p class="text-muted mb-0">No recent audit activity.</p>
+                    <p class="text-muted mb-0">No recent audit activity.</p>
                     {% endif %}
                 </div>
             </div>
