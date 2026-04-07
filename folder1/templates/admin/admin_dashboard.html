@@ -87,47 +87,7 @@
 
     
 
-    {% if market_config %}
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Current Market Configuration</h5>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="text-muted mb-1">Open Time</h6>
-                        <div class="fw-bold">{{ market_config.OpenTime.strftime('%I:%M %p') }}</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="text-muted mb-1">Close Time</h6>
-                        <div class="fw-bold">{{ market_config.CloseTime.strftime('%I:%M %p') }}</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="text-muted mb-1">Time Zone</h6>
-                        <div class="fw-bold">{{ market_config.TimeZone }}</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="text-muted mb-1">Trading Days</h6>
-                        <div class="fw-bold">
-                            {% if market_config.WeekdaysOnly %}
-                            Weekdays Only
-                            {% else %}
-                            All Days
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    
 
     <div class="row g-4">
         <div class="col-lg-6">

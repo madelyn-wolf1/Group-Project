@@ -282,7 +282,9 @@ def background_price_generator():
 @app.route('/')
 def index():
     if 'user_id' in session:
-        return redirect('/dashboard')
+        if session.get('is_admin'):
+            return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('dashboard'))
     return redirect('/login')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -955,6 +957,7 @@ def admin_dashboard():
         holiday_count=holiday_count,
         recent_stocks=recent_stocks,
         recent_logs=recent_logs,
+        market_config=market_config,
         market_open=market_open
     )
 
@@ -985,6 +988,9 @@ def add_stock():
 
     db.session.add(stock)
     db.session.commit()
+
+    log_audit('STOCK_CREATED', session['user_id'], f"Added stock {stock.Ticker}")
+
     flash('Stock added successfully.', 'success')
     return redirect(url_for('admin_stocks'))
 
@@ -1004,6 +1010,9 @@ def edit_stock(stock_id):
         stock.ActiveStatus = bool(int(request.form['active_status']))
 
         db.session.commit()
+
+        log_audit('STOCK_UPDATED', session['user_id'], f"Updated stock {stock.Ticker}")
+
         flash('Stock updated successfully.', 'success')
         return redirect(url_for('admin_stocks'))
 
@@ -1018,6 +1027,8 @@ def delete_stock(stock_id):
     stock = Stock.query.get_or_404(stock_id)
     db.session.delete(stock)
     db.session.commit()
+
+    log_audit('STOCK_DELETED', session['user_id'], f"Deleted stock {stock.Ticker}")
 
     flash('Stock deleted successfully.', 'success')
     return redirect(url_for('admin_stocks'))
@@ -1068,11 +1079,23 @@ def admin_market_config():
             db.session.add(market_config)
 
         db.session.commit()
+
+        log_audit('MARKET_CONFIG_UPDATED', session['user_id'], "Market settings updated")
+        
         flash('Market configuration updated successfully.', 'success')
         return redirect(url_for('admin_dashboard'))
 
     return render_template('admin/market_config.html', market_config=market_config)
 
+@app.route('/admin/audit-logs')
+def admin_audit_logs():
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    logs = AuditLog.query.order_by(AuditLog.EventTime.desc()).all()
+
+    return render_template('admin/audit_logs.html', logs=logs)
 
 if __name__ == '__main__':
     app.run(debug=True)
