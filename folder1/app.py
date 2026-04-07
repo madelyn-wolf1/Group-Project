@@ -235,6 +235,33 @@ def is_market_open():
 
     return True
 
+# Holiday Seeder for 2026
+def seed_2026_market_holidays(admin_id):
+    holidays_2026 = [
+        {"name": "New Year's Day", "date": date(2026, 1, 1)},
+        {"name": "Martin Luther King Jr. Day", "date": date(2026, 1, 19)},
+        {"name": "Presidents' Day", "date": date(2026, 2, 16)},
+        {"name": "Good Friday", "date": date(2026, 4, 3)},
+        {"name": "Memorial Day", "date": date(2026, 5, 25)},
+        {"name": "Juneteenth National Independence Day", "date": date(2026, 6, 19)},
+        {"name": "Independence Day (Observed)", "date": date(2026, 7, 3)},
+        {"name": "Labor Day", "date": date(2026, 9, 7)},
+        {"name": "Thanksgiving Day", "date": date(2026, 11, 26)},
+        {"name": "Christmas Day", "date": date(2026, 12, 25)},
+    ]
+
+    for h in holidays_2026:
+        exists = MarketHoliday.query.filter_by(HolidayDate=h["date"]).first()
+        if not exists:
+            holiday = MarketHoliday(
+                AdminID=admin_id,
+                HolidayDate=h["date"],
+                HolidayName=h["name"]
+            )
+            db.session.add(holiday)
+
+    db.session.commit()
+
 #Seed Stock
 @app.before_request
 def seed_stock():
@@ -1096,6 +1123,100 @@ def admin_audit_logs():
     logs = AuditLog.query.order_by(AuditLog.EventTime.desc()).all()
 
     return render_template('admin/audit_logs.html', logs=logs)
+
+@app.route('/admin/holidays', methods=['GET', 'POST'])
+def admin_holidays():
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    seed_2026_market_holidays(session['user_id'])
+
+    if request.method == 'POST':
+        holiday_name = request.form.get('holiday_name', '').strip()
+        holiday_date_str = request.form.get('holiday_date', '').strip()
+
+        if not holiday_name or not holiday_date_str:
+            flash('Holiday name and date are required.', 'danger')
+            return redirect(url_for('admin_holidays'))
+
+        try:
+            holiday_date = datetime.strptime(holiday_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'danger')
+            return redirect(url_for('admin_holidays'))
+
+        existing = MarketHoliday.query.filter_by(HolidayDate=holiday_date).first()
+        if existing:
+            flash('A holiday already exists on that date.', 'warning')
+            return redirect(url_for('admin_holidays'))
+
+        new_holiday = MarketHoliday(
+            AdminID=session['user_id'],
+            HolidayName=holiday_name,
+            HolidayDate=holiday_date
+        )
+
+        db.session.add(new_holiday)
+        db.session.commit()
+
+        flash('Holiday added successfully.', 'success')
+        return redirect(url_for('admin_holidays'))
+
+    holidays = MarketHoliday.query.order_by(MarketHoliday.HolidayDate.asc()).all()
+    return render_template('admin/holidays.html', holidays=holidays)
+
+@app.route('/admin/holidays/edit/<int:holiday_id>', methods=['POST'])
+def edit_holiday(holiday_id):
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    holiday = MarketHoliday.query.get_or_404(holiday_id)
+
+    holiday_name = request.form.get('holiday_name', '').strip()
+    holiday_date_str = request.form.get('holiday_date', '').strip()
+
+    if not holiday_name or not holiday_date_str:
+        flash('Holiday name and date are required.', 'danger')
+        return redirect(url_for('admin_holidays'))
+
+    try:
+        holiday_date = datetime.strptime(holiday_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        flash('Invalid date format.', 'danger')
+        return redirect(url_for('admin_holidays'))
+
+    existing = MarketHoliday.query.filter(
+        MarketHoliday.HolidayDate == holiday_date,
+        MarketHoliday.HolidayID != holiday_id
+    ).first()
+
+    if existing:
+        flash('Another holiday already exists on that date.', 'warning')
+        return redirect(url_for('admin_holidays'))
+
+    holiday.HolidayName = holiday_name
+    holiday.HolidayDate = holiday_date
+    holiday.AdminID = session['user_id']
+
+    db.session.commit()
+    flash('Holiday updated successfully.', 'success')
+    return redirect(url_for('admin_holidays'))
+
+@app.route('/admin/holidays/delete/<int:holiday_id>', methods=['POST'])
+def delete_holiday(holiday_id):
+    if not session.get('user_id') or not session.get('is_admin'):
+        flash('Access denied.', 'danger')
+        return redirect(url_for('login'))
+
+    holiday = MarketHoliday.query.get_or_404(holiday_id)
+
+    db.session.delete(holiday)
+    db.session.commit()
+
+    flash('Holiday deleted successfully.', 'success')
+    return redirect(url_for('admin_holidays'))
 
 if __name__ == '__main__':
     app.run(debug=True)
