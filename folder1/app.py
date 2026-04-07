@@ -98,7 +98,7 @@ class Order(db.Model):
     OrderType = db.Column(db.String(10), nullable=False)  # BUY, SELL
     Quantity = db.Column(db.Integer, nullable=False)
     OrderPrice = db.Column(db.Float, nullable=False)
-    Status = db.Column(db.String(20), default='pending')  # pending, eligible, cancelled, executed, rejected
+    Status = db.Column(db.String(20), default='Pending')  # pending, eligible, cancelled, executed, rejected
     PlacedAt = db.Column(db.DateTime, default=datetime.utcnow)
     EligibleAt = db.Column(db.DateTime)
     CancelledAt = db.Column(db.DateTime)
@@ -513,17 +513,25 @@ def transactions():
 
     rows = []
 
+    show_all = tx_type == ''
+    show_stock = tx_type in ['BUY', 'SELL']
+    show_cash = tx_type in ['DEPOSIT', 'WITHDRAWAL']
+    show_pending = tx_type == 'PENDING'
+
     # Pending orders
-    pending_orders = Order.query.filter_by(UserID=user.UserID, Status='pending').all()
+    pending_orders = Order.query.filter_by(UserID=user.UserID, Status='Pending').all()
     for o in pending_orders:
         stock = Stock.query.get(o.StockID)
 
-        if tx_type in ['BUY', 'SELL'] and o.OrderType != tx_type:
+        if show_cash:
+            continue
+        if show_stock and o.OrderType != tx_type:
             continue
         if ticker and stock and ticker not in stock.Ticker.upper():
             continue
 
         rows.append({
+            'order_id': o.OrderID,
             'date': o.PlacedAt,
             'kind': 'Pending',
             'type': o.OrderType,
@@ -531,20 +539,24 @@ def transactions():
             'quantity': o.Quantity,
             'price': o.OrderPrice,
             'total': o.Quantity * o.OrderPrice,
-            'status': o.Status
+            'status': o.Status,
+            'can_cancel': True
         })
 
     # Executed trades
-    executed_orders = Order.query.filter_by(UserID=user.UserID, Status='executed').all()
+    executed_orders = Order.query.filter_by(UserID=user.UserID, Status='Executed').all()
     for o in executed_orders:
         stock = Stock.query.get(o.StockID)
 
-        if tx_type in ['BUY', 'SELL'] and o.OrderType != tx_type:
+        if show_pending or show_cash:
+            continue
+        if show_stock and o.OrderType != tx_type:
             continue
         if ticker and stock and ticker not in stock.Ticker.upper():
             continue
 
         rows.append({
+            'order_id': o.OrderID,
             'date': o.ExecutedAt,
             'kind': 'Trade',
             'type': o.OrderType,
@@ -552,7 +564,8 @@ def transactions():
             'quantity': o.Quantity,
             'price': o.OrderPrice,
             'total': o.Quantity * o.OrderPrice,
-            'status': o.Status
+            'status': o.Status,
+            'can_cancel': False
         })
 
     # Cash transactions
@@ -560,12 +573,13 @@ def transactions():
     for c in cash:
         if c.TransactionType in ['TRADE_BUY', 'TRADE_SELL']:
             continue
-        if tx_type in ['DEPOSIT', 'WITHDRAWAL'] and c.TransactionType != tx_type:
+        if show_pending or show_stock:
             continue
-        if tx_type in ['BUY', 'SELL'] and c.TransactionType in ['DEPOSIT', 'WITHDRAWAL']:
+        if show_cash and c.TransactionType != tx_type:
             continue
 
         rows.append({
+            'order_id': None,
             'date': c.Timestamp,
             'kind': 'Cash',
             'type': c.TransactionType,
@@ -573,7 +587,8 @@ def transactions():
             'quantity': '-',
             'price': '-',
             'total': c.Amount,
-            'status': 'done'
+            'status': 'Executed',
+            'can_cancel': False
         })
 
     rows.sort(key=lambda x: x['date'], reverse=True)
@@ -584,6 +599,29 @@ def transactions():
         tx_type=tx_type,
         ticker=ticker
     )
+
+@app.route('/orders/<int:order_id>/cancel', methods=['POST'])
+def cancel_order(order_id):
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    order = Order.query.filter_by(OrderID=order_id, UserID=session['user_id']).first()
+
+    if not order:
+        flash('Order not found.', 'danger')
+        return redirect(url_for('transactions'))
+
+    if order.Status not in ['Pending']:
+        flash('This order can no longer be cancelled.', 'warning')
+        return redirect(url_for('transactions'))
+
+    order.Status = 'Cancelled'
+    order.CancelledAt = datetime.utcnow()
+
+    db.session.commit()
+
+    flash('Order cancelled successfully.', 'success')
+    return redirect(url_for('transactions'))
 
 @app.route('/portfolio')
 def portfolio():
@@ -765,7 +803,7 @@ def trade(ticker):
                     OrderType='BUY',
                     Quantity=quantity,
                     OrderPrice=order_price,
-                    Status='executed',
+                    Status='Executed',
                     PlacedAt=datetime.utcnow(),
                     ExecutedAt=datetime.utcnow()
                 )
@@ -808,7 +846,7 @@ def trade(ticker):
                     OrderType='SELL',
                     Quantity=quantity,
                     OrderPrice=order_price,
-                    Status='executed',
+                    Status='Executed',
                     PlacedAt=datetime.utcnow(),
                     ExecutedAt=datetime.utcnow()
                 )
@@ -852,7 +890,7 @@ def trade(ticker):
                 OrderType=order_type,
                 Quantity=quantity,
                 OrderPrice=order_price,
-                Status='pending',
+                Status='Pending',
                 PlacedAt=datetime.utcnow(),
                 EligibleAt=datetime.utcnow()
             )

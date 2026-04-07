@@ -12,16 +12,23 @@
             <div class="row mb-4">
                 <div class="col-md-6 mb-3">
                     <small class="text-uppercase text-muted d-block">Current Price</small>
-                    <h3 class="text-success fw-bold mb-0">${{ "%.2f"|format(stock.CurrentPrice) }}</h3>
+                    <h3 class="text-success fw-bold mb-0">
+                        ${{ "%.2f"|format(stock.CurrentPrice) }}
+                    </h3>
                 </div>
+
                 <div class="col-md-6 mb-3">
                     <small class="text-uppercase text-muted d-block">Available Cash</small>
-                    <h3 class="text-primary fw-bold mb-0">${{ "%.2f"|format(cash_balance) }}</h3>
+                    <h3 class="text-primary fw-bold mb-0">
+                        ${{ "%.2f"|format(cash_balance) }}
+                    </h3>
                 </div>
+
                 <div class="col-md-6">
                     <small class="text-uppercase text-muted d-block">Your Holdings</small>
                     <p class="fw-semibold mb-0">{{ owned_shares }} Shares</p>
                 </div>
+
                 <div class="col-md-6">
                     <small class="text-uppercase text-muted d-block">Order Status</small>
                     <p class="fw-semibold mb-0">
@@ -36,7 +43,8 @@
 
             <hr class="mb-4">
 
-            <form method="POST" action="{{ url_for('trade', ticker=stock.Ticker) }}">
+            <form method="POST" action="{{ url_for('trade', ticker=stock.Ticker) }}" id="tradeForm">
+
                 <div class="mb-3">
                     <label class="form-label">Order Type</label>
                     <select name="order_type" class="form-select" required>
@@ -50,10 +58,48 @@
                     <input type="number" name="quantity" min="1" class="form-control" required>
                 </div>
 
-                <button type="submit" class="btn btn-dark px-4">Submit Order</button>
-                <a href="{{ url_for('stock_detail', ticker=stock.Ticker) }}" class="btn btn-link text-secondary text-decoration-none">Cancel</a>
+                <button type="button" class="btn btn-dark px-4"
+                        data-bs-toggle="modal" data-bs-target="#confirmTradeModal">
+                    Submit Order
+                </button>
+
+                <a href="{{ url_for('stock_detail', ticker=stock.Ticker) }}"
+                   class="btn btn-link text-secondary text-decoration-none">
+                    Cancel
+                </a>
+
             </form>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="confirmTradeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Confirm Trade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center py-4">
+                <p class="mb-0 text-muted">
+                    Are you sure you want to submit this trade?
+                </p>
+            </div>
+
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4 fw-bold" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="submit" form="tradeForm" class="btn btn-dark px-4 fw-bold">
+                    Confirm Order
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 {% endblock %}
