@@ -517,13 +517,14 @@ def transactions():
     show_stock = tx_type in ['BUY', 'SELL']
     show_cash = tx_type in ['DEPOSIT', 'WITHDRAWAL']
     show_pending = tx_type == 'PENDING'
+    show_cancelled = tx_type == 'CANCELLED'
 
     # Pending orders
     pending_orders = Order.query.filter_by(UserID=user.UserID, Status='Pending').all()
     for o in pending_orders:
         stock = Stock.query.get(o.StockID)
 
-        if show_cash:
+        if show_cash or show_cancelled:
             continue
         if show_stock and o.OrderType != tx_type:
             continue
@@ -548,7 +549,7 @@ def transactions():
     for o in executed_orders:
         stock = Stock.query.get(o.StockID)
 
-        if show_pending or show_cash:
+        if show_pending or show_cash or show_cancelled:
             continue
         if show_stock and o.OrderType != tx_type:
             continue
@@ -568,12 +569,35 @@ def transactions():
             'can_cancel': False
         })
 
+    # Cancelled orders
+    cancelled_orders = Order.query.filter_by(UserID=user.UserID, Status='Cancelled').all()
+    for o in cancelled_orders:
+        stock = Stock.query.get(o.StockID)
+
+        if show_cash or show_pending or show_stock:
+            continue
+        if ticker and stock and ticker not in stock.Ticker.upper():
+            continue
+
+        rows.append({
+            'order_id': o.OrderID,
+            'date': o.CancelledAt if o.CancelledAt else o.PlacedAt,
+            'kind': 'Cancelled',
+            'type': o.OrderType,
+            'ticker': stock.Ticker if stock else '-',
+            'quantity': o.Quantity,
+            'price': o.OrderPrice,
+            'total': o.Quantity * o.OrderPrice,
+            'status': o.Status,
+            'can_cancel': False
+    })
+
     # Cash transactions
     cash = CashTransaction.query.filter_by(AcctID=account.AcctID).all()
     for c in cash:
         if c.TransactionType in ['TRADE_BUY', 'TRADE_SELL']:
             continue
-        if show_pending or show_stock:
+        if show_pending or show_stock or show_cancelled:
             continue
         if show_cash and c.TransactionType != tx_type:
             continue

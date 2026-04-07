@@ -13,11 +13,12 @@
             <label class="form-label">Type</label>
             <select name="type" class="form-select">
                 <option value="">All</option>
-                <option value="BUY" {% if tx_type == 'BUY' %}selected{% endif %}>Buy</option>
-                <option value="SELL" {% if tx_type == 'SELL' %}selected{% endif %}>Sell</option>
-                <option value="DEPOSIT" {% if tx_type == 'DEPOSIT' %}selected{% endif %}>Deposit</option>
-                <option value="WITHDRAWAL" {% if tx_type == 'WITHDRAWAL' %}selected{% endif %}>Withdrawal</option>
-                <option value="PENDING" {% if tx_type == 'PENDING' %}selected{% endif %}>Pending</option>
+                <option value="BUY" {% if tx_type=='BUY' %}selected{% endif %}>Buy</option>
+                <option value="SELL" {% if tx_type=='SELL' %}selected{% endif %}>Sell</option>
+                <option value="DEPOSIT" {% if tx_type=='DEPOSIT' %}selected{% endif %}>Deposit</option>
+                <option value="WITHDRAWAL" {% if tx_type=='WITHDRAWAL' %}selected{% endif %}>Withdrawal</option>
+                <option value="PENDING" {% if tx_type=='PENDING' %}selected{% endif %}>Pending</option>
+                <option value="CANCELLED" {% if tx_type == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
             </select>
         </div>
 
@@ -45,6 +46,7 @@
             <th>Price</th>
             <th>Total</th>
             <th>Status</th>
+            <th>Action</th>
         </tr>
     </thead>
     <tbody>
@@ -57,13 +59,24 @@
             <td>{{ t.quantity }}</td>
             <td>
                 {% if t.price != '-' %}
-                    ${{ "%.2f"|format(t.price) }}
+                ${{ "%.2f"|format(t.price) }}
                 {% else %}
-                    -
+                -
                 {% endif %}
             </td>
             <td>${{ "%.2f"|format(t.total) }}</td>
             <td>{{ t.status }}</td>
+            <td>
+                {% if t.can_cancel %}
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                    data-bs-target="#cancelOrderModal" data-order-id="{{ t.order_id }}" data-order-type="{{ t.type }}"
+                    data-order-ticker="{{ t.ticker }}">
+                    Cancel
+                </button>
+                {% else %}
+                -
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -74,4 +87,55 @@
 
 <a href="{{ url_for('dashboard') }}" class="btn btn-dark mt-3">Back</a>
 
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 p-3">
+            <div class="modal-header border-0 pb-0">
+                <h4 class="modal-title fw-bold" id="cancelOrderModalLabel">Confirm Cancellation</h4>
+                <button type="button" class="btn-close fs-4" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body text-center py-4">
+                <p class="text-muted fs-5 mb-0">
+                    Please confirm that you want to cancel this pending
+                    <span id="modalOrderType"></span> order for
+                    <span id="modalOrderTicker"></span>.
+                </p>
+            </div>
+
+            <div class="modal-footer border-0 justify-content-center gap-3 pt-0">
+                <button type="button" class="btn btn-light px-4 py-2 fw-semibold" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <form id="cancelOrderForm" method="POST">
+                    <button type="submit" class="btn btn-danger px-4 py-2 fw-semibold">
+                        Confirm Cancellation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cancelOrderModal = document.getElementById('cancelOrderModal');
+        const cancelOrderForm = document.getElementById('cancelOrderForm');
+        const modalOrderType = document.getElementById('modalOrderType');
+        const modalOrderTicker = document.getElementById('modalOrderTicker');
+
+        cancelOrderModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+
+            const orderId = button.getAttribute('data-order-id');
+            const orderType = button.getAttribute('data-order-type');
+            const orderTicker = button.getAttribute('data-order-ticker');
+
+            modalOrderType.textContent = orderType;
+            modalOrderTicker.textContent = orderTicker;
+            cancelOrderForm.action = `/orders/${orderId}/cancel`;
+        });
+    });
+</script>
 {% endblock %}
