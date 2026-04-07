@@ -225,6 +225,11 @@ def is_market_open():
 
     now = datetime.now()
 
+    today = date.today()
+    holiday = MarketHoliday.query.filter_by(HolidayDate=today).first()
+    if holiday:
+        return False
+
     if market_config.WeekdaysOnly and now.weekday() >= 5:
         return False
 
