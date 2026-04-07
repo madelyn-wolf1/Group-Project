@@ -3,145 +3,58 @@
 {% block title %}Dashboard - Stock Trader{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-0">
-    <div class="mb-4">
-        <h2 class="fw-bold mb-1">
-            <i class="fas fa-chart-line me-2"></i>Welcome, {{ user.FirstName }} {{ user.LastName }}!
-        </h2>
-        <p class="text-muted mb-0">Here's your trading dashboard overview.</p>
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">Welcome, {{ user.FirstName }} {{ user.LastName }}!</h1>
+        <p class="lead">Here's your trading dashboard overview.</p>
     </div>
-
+</div>
     <!-- Balance Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-2">Cash Balance</h6>
-                            <h3 class="fw-bold mb-0 text-success">${{ "%.2f"|format(account.CashBalance) }}</h3>
-                        </div>
-                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
-                            <i class="fas fa-wallet fa-lg"></i>
-                        </div>
-                    </div>
-                </div>
+    <div class="row mb-4">
+    <div class="col-lg-6 col-md-12">
+        <div class="card bg-success text-white shadow">
+            <div class="card-body">
+                <h6 class="card-title mb-2">Cash Balance</h6>
+                <h2 class="card-text mb-0">${{ "%.2f"|format(account.CashBalance) }}</h2>
             </div>
         </div>
-
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-2">Total Net Worth</h6>
-                            <h3 class="fw-bold mb-0 text-primary">${{ "%.2f"|format(net_worth) }}</h3>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
-                            <i class="fas fa-chart-pie fa-lg"></i>
-                        </div>
-                    </div>
-                </div>
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body">
+                <h6 class="card-title mb-2">Total Net Worth</h6>
+                <h2 class="card-text mb-0">
+                    ${{ "%.2f"|format(net_worth) }}
+                </h2>
             </div>
         </div>
     </div>
 
-    <!-- Portfolio Section -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Portfolio</h5>
-            <a href="{{ url_for('portfolio') }}" class="btn btn-sm btn-light">View All</a>
-        </div>
-        <div class="card-body p-0">
-            {% if holdings and holdings|length > 0 %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Ticker</th>
-                            <th>Company</th>
-                            <th>Shares</th>
-                            <th>Avg Cost</th>
-                            <th>Current Price</th>
-                            <th>Total Value</th>
-                            <th>Profit & Loss</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for holding in holdings %}
-                        <tr>
-                            <td><span class="badge bg-dark">{{ holding.Ticker }}</span></td>
-                            <td>{{ holding.CompanyName }}</td>
-                            <td>{{ holding.Shares }}</td>
-                            <td>${{ "%.2f"|format(holding.AvgPrice) }}</td>
-                            <td>${{ "%.2f"|format(holding.CurrentPrice) }}</td>
-                            <td class="fw-bold">${{ "%.2f"|format(holding.CurrentValue) }}</td>
-                            <td class="{% if holding.PnL >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                {% if holding.PnL >= 0 %}+{% endif %}${{ "%.2f"|format(holding.PnL) }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('stocks') }}" class="btn btn-dark">
+                        <i class="fas fa-chart-line"></i> Market
+                    </a>
+                    <a href="{{ url_for('portfolio') }}" class="btn btn-success">
+                        <i class="fas fa-briefcase"></i> Portfolio
+                    </a>
+                    <a href="{{ url_for('transactions') }}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> Transactions
+                    </a>
+                    <a href="{{ url_for('cash_management') }}" class="btn btn-dark">
+                        <i class="fas fa-wallet"></i> Cash Management
+                    </a>
+                </div>
             </div>
-            {% else %}
-            <div class="p-4 text-center text-muted">
-                <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
-                Your portfolio is empty. <a href="{{ url_for('stocks') }}">Go to Market</a> to buy your first stock!
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Transactions Section -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-history me-2"></i>Transactions</h5>
-            <a href="{{ url_for('transactions') }}" class="btn btn-sm btn-light">View All</a>
-        </div>
-        <div class="card-body p-0">
-            {% if transactions and transactions|length > 0 %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Ticker</th>
-                            <th>Company</th>
-                            <th>Shares</th>
-                            <th>Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for transaction in transactions %}
-                        <tr>
-                            <td>{{ transaction.TransactionTime.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                {% if transaction.TransactionType == 'BUY' %}
-                                <span class="badge bg-success">BUY</span>
-                                {% else %}
-                                <span class="badge bg-danger">SELL</span>
-                                {% endif %}
-                            </td>
-                            <td><span class="badge bg-dark">{{ transaction.Ticker }}</span></td>
-                            <td>{{ transaction.CompanyName }}</td>
-                            <td>{{ transaction.Shares }}</td>
-                            <td>${{ "%.2f"|format(transaction.Price) }}</td>
-                            <td class="fw-bold">${{ "%.2f"|format(transaction.Shares * transaction.Price) }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="p-4 text-center text-muted">
-                <i class="fas fa-receipt fa-2x mb-2 d-block"></i>
-                No transactions yet. Your trading history will appear here.
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
+    
 {% endblock %}
