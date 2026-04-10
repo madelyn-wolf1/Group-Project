@@ -10,7 +10,7 @@ from flask_bootstrap5 import Bootstrap
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:password123@localhost/stock_trading"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Password@localhost/stock_trading"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = 'your-secret-key-here'
 
@@ -239,6 +239,40 @@ def is_market_open():
         return False
 
     return True
+
+# Helper function for executing pending order when market opens
+def process_pending_orders():
+    if not is_market_open():
+        return
+
+    orders = Order.query.filter_by(Status='Pending').all()
+
+    for order in orders:
+        stock = Stock.query.get(order.StockID)
+        account = Account.query.filter_by(UserID=order.UserID).first()
+        holding = Holding.query.filter_by(UserID=order.UserID, StockID=order.StockID).first()
+
+        price = stock.CurrentPrice
+        total = order.Quantity * price
+
+        if order.OrderType == 'BUY' and account.CashBalance >= total:
+            account.CashBalance -= total
+            if not holding:
+                holding = Holding(UserID=order.UserID, StockID=order.StockID, Shares=0)
+                db.session.add(holding)
+            holding.Shares += order.Quantity
+
+        elif order.OrderType == 'SELL' and holding and holding.Shares >= order.Quantity:
+            account.CashBalance += total
+            holding.Shares -= order.Quantity
+
+        else:
+            continue
+
+        order.Status = 'Executed'
+        order.ExecutedAt = datetime.utcnow()
+
+    db.session.commit()
 
 # Holiday Seeder for 2026
 def seed_2026_market_holidays(admin_id):
@@ -538,6 +572,8 @@ def withdraw():
 def transactions():
     if 'user_id' not in session:
         return redirect('/login')
+
+    process_pending_orders()
 
     user = User.query.get(session['user_id'])
     account = Account.query.filter_by(UserID=user.UserID).first()
