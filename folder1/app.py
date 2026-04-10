@@ -219,30 +219,27 @@ def log_audit(event_type, user_id=None, details=None):
 #Helper function to check if market is open
 def is_market_open():
     market_config = MarketConfig.query.first()
-
     if not market_config:
-        return False
-
-    now = datetime.now()
+        return False, None
 
     today = date.today()
     holiday = MarketHoliday.query.filter_by(HolidayDate=today).first()
     if holiday:
-        return False
+        return False, holiday.HolidayName
 
+    now = datetime.now()
     if market_config.WeekdaysOnly and now.weekday() >= 5:
-        return False
+        return False, None
 
     current_time = now.time()
-
     if current_time < market_config.OpenTime or current_time > market_config.CloseTime:
-        return False
+        return False, None
 
-    return True
+    return True, None
 
 # Helper function for executing pending order when market opens
 def process_pending_orders():
-    if not is_market_open():
+    if not is_market_open()[0]:
         return
 
     orders = Order.query.filter_by(Status='Pending').all()
@@ -271,6 +268,8 @@ def process_pending_orders():
 
         order.Status = 'Executed'
         order.ExecutedAt = datetime.utcnow()
+
+        db.session.flush()
 
     db.session.commit()
 
@@ -431,7 +430,8 @@ def logout():
 def dashboard():
     if 'user_id' not in session:
         return redirect('/login')
-    
+    process_pending_orders()
+
     user = User.query.get(session['user_id'])
 
     if user is None:
@@ -440,6 +440,8 @@ def dashboard():
         return redirect('/login')
 
     account = Account.query.filter_by(UserID=user.UserID).first()
+    if account:
+        db.session.refresh(account)
 
     if account is None:
         flash("No account found for this user.")
@@ -448,6 +450,24 @@ def dashboard():
     # Get recent transactions
     recent_transactions = CashTransaction.query.filter_by(AcctID=account.AcctID)\
         .order_by(CashTransaction.Timestamp.desc()).limit(5).all()
+    
+    # Process each entry for the dashboard UI
+    for entry in recent_transactions:
+        if 'DEPOSIT' in entry.TransactionType:
+            entry.icon = 'fas fa-plus-circle'
+            entry.color = 'text-success'
+        elif 'WITHDRAW' in entry.TransactionType:
+            entry.icon = 'fas fa-minus-circle'
+            entry.color = 'text-danger'
+        elif 'BUY' in entry.TransactionType:
+            entry.icon = 'fas fa-arrow-trend-up'
+            entry.color = 'text-primary'
+        elif 'SELL' in entry.TransactionType:
+            entry.icon = 'fas fa-dollar-sign'
+            entry.color = 'text-success'
+        else:
+            entry.icon = 'fas fa-exchange-alt'
+            entry.color = 'text-dark'
     
     # Get holdings w stock info
     holdings = Holding.query.filter_by(UserID=user.UserID).all()
@@ -464,9 +484,13 @@ def dashboard():
                 'value': holding.Shares * stock.CurrentPrice
             })
 
-    
     total_stock_value = sum(h['value'] for h in holdings_data)
     net_worth = account.CashBalance + total_stock_value
+
+    market_config = MarketConfig.query.first()
+    now = datetime.now()
+
+    market_status, closing_reason = is_market_open()
 
     return render_template(
         'dashboard.html',
@@ -474,7 +498,11 @@ def dashboard():
         account=account,
         holdings=holdings_data,
         transactions=recent_transactions,
-        net_worth=net_worth
+        net_worth=net_worth,
+        market_config=market_config,
+        market_is_open=market_status,
+        market_reason=closing_reason,
+        now=now
     )
 
 @app.route('/cash-management')
@@ -794,7 +822,7 @@ def stocks():
 
     stocks_list = query.order_by(Stock.Ticker.asc()).all()
 
-    market_open = is_market_open()
+    market_open, _= is_market_open()
 
     return render_template(
         'stock_search.html',
@@ -852,7 +880,7 @@ def trade(ticker):
 
     owned_shares = holding.Shares if holding else 0
     cash_balance = account.CashBalance
-    market_open = is_market_open()
+    market_open, _ = is_market_open()
 
     if request.method == 'POST':
         order_type = (request.form.get('order_type') or '').strip().upper()

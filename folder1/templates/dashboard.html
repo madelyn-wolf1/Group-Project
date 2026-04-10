@@ -6,24 +6,24 @@
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="display-4">Welcome, {{ user.FirstName }} {{ user.LastName }}!</h1>
-        <p class="lead">Here's your trading dashboard overview.</p>
+        <p class="lead text-muted">Here's your trading dashboard overview.</p>
     </div>
 </div>
 
 <!-- Balance Card -->
 <div class="row mb-4">
-    <div class="col-lg-6 col-md-12">
-        <div class="card bg-success text-white shadow">
+    <div class="col-lg-6 col-md-12 mb-3">
+        <div class="card bg-success text-white shadow border-0 py-2">
             <div class="card-body">
-                <h6 class="card-title mb-2">Cash Balance</h6>
+                <h6 class="card-title mb-2"><i class="fas fa-wallet me-2"></i>Cash Balance</h6>
                 <h2 class="card-text mb-0">${{ "%.2f"|format(account.CashBalance) }}</h2>
             </div>
         </div>
     </div>
     <div class="col-lg-6 col-md-12">
-        <div class="card bg-primary text-white shadow">
+        <div class="card bg-primary text-white shadow border-0 py-2">
             <div class="card-body">
-                <h6 class="card-title mb-2">Total Net Worth</h6>
+                <h6 class="card-title mb-2"><i class="fas fa-chart-line me-2"></i>Total Net Worth</h6>
                 <h2 class="card-text mb-0">
                     ${{ "%.2f"|format(net_worth) }}
                 </h2>
@@ -32,28 +32,66 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-body">
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                    <a href="{{ url_for('stocks') }}" class="btn btn-dark">
-                        <i class="fas fa-chart-line"></i> Market
-                    </a>
-                    <a href="{{ url_for('portfolio') }}" class="btn btn-success">
-                        <i class="fas fa-briefcase"></i> Portfolio
-                    </a>
-                    <a href="{{ url_for('transactions') }}" class="btn btn-secondary">
-                        <i class="fas fa-list"></i> Transactions
-                    </a>
-                    <a href="{{ url_for('cash_management') }}" class="btn btn-dark">
-                        <i class="fas fa-wallet"></i> Cash Management
-                    </a>
-                </div>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow border-0 h-100">
+            <div class="card-body py-4">
+                <h5 class="card-title mb-4 text-muted">
+                    <i class="fas fa-landmark me-2"></i>Market Status
+                </h5>
+              <div class="py-2">
+    {% if market_is_open %}
+        <h2 class="text-success fw-bold mb-2">Market Open</h2>
+    {% else %}
+        <h2 class="text-danger fw-bold mb-2">Market Closed</h2>
+        
+        {% if market_reason %}
+                        <p class="text-muted fw-bold mb-1">
+                            <i class="fas fa-calendar-day me-2"></i>{{ market_reason }}
+                        </p>
+        {% endif %}
+    {% endif %}
+    
+    <p class="text-muted mb-0 fs-5">
+        <i class="far fa-clock me-2"></i>
+        {{ market_config.OpenTime.strftime('%I:%M %p') }} - 
+        {{ market_config.CloseTime.strftime('%I:%M %p') }}
+    </p>
+</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card shadow border-0 h-100">
+            <div class="card-body py-4">
+                <h5 class="card-title mb-4 text-muted">
+                    <i class="fas fa-history me-2"></i>Recent Activity
+                </h5>
+                <ul class="list-group list-group-flush">
+                    {% for entry in transactions[:3] %}
+<li class="list-group-item d-flex justify-content-between align-items-center px-0 border-0 py-3">
+    <span class="fs-5">
+        <i class="{{ entry.icon }} {{ entry.color }} me-3"></i>
+        
+        {% if 'SELL' in entry.TransactionType %}
+            Sell
+        {% elif 'BUY' in entry.TransactionType %}
+            Buy
+        {% elif 'DEPOSIT' in entry.TransactionType %}
+            Deposit
+        {% elif 'WITHDRAW' in entry.TransactionType %}
+            Withdrawal
+        {% else %}
+            {{ entry.TransactionType }}
+        {% endif %}
+    </span>
+    <span class="fw-bold fs-4 {{ entry.color }}">
+        ${{ "%.2f"|format(entry.Amount) }}
+    </span>
+</li>
+{% endfor %}
+                </ul>
             </div>
         </div>
     </div>
