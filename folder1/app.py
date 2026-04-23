@@ -6,13 +6,14 @@ from sqlalchemy import and_, or_, func
 import ipaddress
 import random
 from flask_bootstrap5 import Bootstrap
+from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, SECRET_KEY
 
 app = Flask(__name__)
 
 # Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Password@localhost/stock_trading"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SECRET_KEY"] = 'your-secret-key-here'
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = SQLALCHEMY_TRACK_MODIFICATIONS
+app.config["SECRET_KEY"] = SECRET_KEY
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -300,21 +301,6 @@ def seed_2026_market_holidays(admin_id):
 
     db.session.commit()
 
-#Seed Stock
-@app.before_request
-def seed_stock():
-    if not Stock.query.first():
-        test_stock = Stock(
-            Ticker='TSLA',
-            CompanyName='Tesla Inc.',
-            CurrentPrice=150.00,
-            OpeningPrice=145.00,
-            TotalVolume=1000000,
-            ActiveStatus=True,
-        )
-        db.session.add(test_stock)
-        db.session.commit()
-        
 # Global price updateer
 last_update_time = datetime.min
 
@@ -327,7 +313,7 @@ def background_price_generator():
         
     now = datetime.utcnow()
     
-    if (now - last_update_time).total_seconds() >= 59:
+    if (now - last_update_time).total_seconds() >= 30:
         all_stocks = Stock.query.all()
         for s in all_stocks:
             change_pct = random.uniform(-0.02, 0.02)
